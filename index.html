@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video To Link</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0f1117;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: #181c25;
+      padding: 25px;
+      border-radius: 18px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #999;
+      margin-bottom: 25px;
+    }
+
+    .upload-box {
+      border: 2px dashed #3b82f6;
+      border-radius: 15px;
+      padding: 35px 15px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .upload-box:hover {
+      background: #202531;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .icon {
+      font-size: 45px;
+      margin-bottom: 10px;
+    }
+
+    #fileName {
+      margin-top: 15px;
+      color: #60a5fa;
+      word-break: break-word;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #444;
+      cursor: not-allowed;
+    }
+
+    #status {
+      text-align: center;
+      margin-top: 15px;
+      color: #aaa;
+    }
+
+    .result {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .link-box {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .link-box input {
+      flex: 1;
+      min-width: 0;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #0f1117;
+      color: white;
+    }
+
+    .copy-btn {
+      width: auto;
+      margin: 0;
+      background: #16a34a;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🎬 Video To Link</h1>
+
+  <p class="subtitle">
+    Upload video dan dapatkan link
+  </p>
+
+  <label class="upload-box">
+
+    <input
+      type="file"
+      id="videoInput"
+      accept="video/*"
+    >
+
+    <div class="icon">📁</div>
+
+    <b>Pilih Video</b>
+
+    <div style="color:#888;margin-top:8px;">
+      MP4, MOV, WEBM, dan lainnya
+    </div>
+
+    <div id="fileName"></div>
+
+  </label>
+
+  <button id="uploadButton" disabled>
+    Upload Video
+  </button>
+
+  <div id="status"></div>
+
+  <div class="result" id="result">
+
+    <b>🔗 Link Video</b>
+
+    <div class="link-box">
+
+      <input
+        type="text"
+        id="videoLink"
+        readonly
+      >
+
+      <button
+        class="copy-btn"
+        onclick="copyLink()"
+      >
+        Copy
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+const videoInput =
+  document.getElementById("videoInput");
+
+const uploadButton =
+  document.getElementById("uploadButton");
+
+const fileName =
+  document.getElementById("fileName");
+
+const status =
+  document.getElementById("status");
+
+let selectedFile = null;
+
+
+videoInput.addEventListener("change", () => {
+
+  selectedFile = videoInput.files[0];
+
+  if (!selectedFile) return;
+
+  fileName.textContent =
+    selectedFile.name +
+    " • " +
+    (selectedFile.size / 1024 / 1024).toFixed(2) +
+    " MB";
+
+  uploadButton.disabled = false;
+
+});
+
+
+uploadButton.addEventListener("click", async () => {
+
+  if (!selectedFile) return;
+
+  uploadButton.disabled = true;
+
+  status.textContent =
+    "⏳ Sedang upload...";
+
+  const formData = new FormData();
+
+  formData.append(
+    "video",
+    selectedFile
+  );
+
+  try {
+
+    const response = await fetch(
+      "/.netlify/functions/upload",
+      {
+        method: "POST",
+        body: formData
+      }
+    );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || "Upload gagal"
+      );
+    }
+
+    document.getElementById(
+      "videoLink"
+    ).value = data.url;
+
+    document.getElementById(
+      "result"
+    ).style.display = "block";
+
+    status.textContent =
+      "✅ Upload berhasil!";
+
+  } catch (error) {
+
+    status.textContent =
+      "❌ " + error.message;
+
+  }
+
+  uploadButton.disabled = false;
+
+});
+
+
+function copyLink() {
+
+  const input =
+    document.getElementById("videoLink");
+
+  navigator.clipboard.writeText(
+    input.value
+  );
+
+  alert("Link berhasil disalin!");
+
+}
+
+</script>
+
+</body>
+</html>
